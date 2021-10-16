@@ -1,6 +1,8 @@
 # catbridge_tools
 Tools for working with MARC data in Catalogue Bridge.
 
+Borrows heavily from PyMarc (https://pypi.org/project/pymarc/).
+
 ## Requirements
 
 Requires the regex module from https://bitbucket.org/mrabarnett/mrab-regex. The built-in re module is not sufficient.
