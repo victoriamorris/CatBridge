@@ -1,5 +1,5 @@
 # catbridge_tools
-Tools for working with MARC data in Catalogue Bridge.
+Tools for working with MARC data in Catalogue Bridge. 
 
 Borrows heavily from PyMarc (https://pypi.org/project/pymarc/).
 
@@ -35,6 +35,12 @@ Both of the above commands can be carried out by running the shell script:
 The scripts listed below can be run from anywhere, once the package is installed 
 and the .exe files have been copied to an executable path.
 
+### Correspondence with original Catalogue Bridge tools
+
+| Original Catalogue Bridge tool | New tool | Original syntax | Corresponding new syntax |
+| -------- | -------- | -------- | -------- |
+| cn-find | [cn-find](#cn_find) | CN-FIND \<infile> \<outfile> \<configfile> | cn_find -i <input_file> -o <output_file> -c <config_file> |
+
 ### Features common to all scripts
 
 #### File formats
@@ -51,20 +57,17 @@ This is a UTF-8 encoded text field and can be read in any text editor.
 The default logging level is INFO; if option --debug is set, the logging level is changed to DEBUG.
 See https://docs.python.org/3/library/logging.html#levels for information about logging levels.
 
-### get_fields
+### cn_find
 
-*get_fields* is a utility which extracts nominated fields and subfields from a file of MARC 21 records.
+*cn_find* is a utility which extracts extract control numbers from specified fields and subfields within a file of MARC records.
 
 The fields and subfields to be extracted are specified in a config file.
 
-    Usage: get_fields -i <input_file> -o <output_file> -c <config_file> [options]
+    Usage: cn_find -i <input_file> -o <output_file> -c <config_file> [options]
     
     Options:
-        --trim  Trim subfields & normalize whitespace
-        --isbn  Validate and normalize ISBNs and other control numbers
+        --conv  Convert 10-digit ISBNs to 13-digit form where possible
         --rid	Include record ID as the first column of the output file
-        --delim=<delim> Specify the delimiter to be used to separate multiple subfields
-                        If not specified, default is a single white space
 
         --debug	Debug mode.
         --help	Show help message and exit.
@@ -73,7 +76,7 @@ The fields and subfields to be extracted are specified in a config file.
 
 <input_file> is the name of the input file, which must be a file of MARC 21 records.
 
-<output_file> is the name of the file to which the fields/subfields will be written. This should be a text file.
+<output_file> is the name of the file to which the control numbers will be written. This should be a text file.
 
 <config_file> is the name of the file containing the configuration directives.
 
@@ -81,64 +84,59 @@ The fields and subfields to be extracted are specified in a config file.
 
 The format of the configuration file is as follows, with one entry per line
 
-    FIELD TAG $ subfield characters
+    FIELD TAG $ subfield character [tab] control number specification
 
 Each line must match the regular expression
 
-    [0-9A-Z]{3}\$?[a-z0-9]*
+    ^([0-9A-Z]{3})\s*\$?\s*([a-z0-9]?)\s*\t(.*?)\s*$
 
 The field tag is specified using three numbers or UPPERCASE letters.
 
-The subfield codes are specified using one or more numbers or lowercase letters.
+The subfield code are specified using a single number or lowercase letter.
+If '$' appears *without* any following subfield characters,  *all* subfields will be searched for control numbers.
 
-If '$' appears *without* any following subfield characters, *all* subfields will be extracted.
+The control number specification tells the script what kind of control number to search for within the subfield. 
+This can either take a value from a pre-defined list, 
+or a regular expression can be used to search for control numbers with any other structure.
+Regular expressions are *case-sensitive*.
 
-Multiple fields and subfields may be specified. Fields may be repeated with different combinations of subfields.
+| Control number specification | Description | Regular expression |
+| -------- | ----------- | ----------- |
+| ISBN    | Any structurally plausible ISBN* | \b(?=(?:[0-9]+[\- ]?){10})[0-9]{9}[0-9Xx]\b&#124;\b(?=(?:[0-9]+[\- ]?){13})[0-9]{1,5}[\- ][0-9]+[\- ][0-9]+[\- ][0-9Xx]\b&#124;\b97[89][0-9]{10}\b&#124;\b(?=(?:[0-9]+[\- ]){4})97[89][\- 0-9]{13}[0-9]\b |
+| ISBN10  | Any structurally plausible 10-digit ISBN* | \b(?=(?:[0-9]+[\- ]?){10})[0-9]{9}[0-9Xx]\b&#124;\b(?=(?:[0-9]+[\- ]?){13})[0-9]{1,5}[\- ][0-9]+[\- ][0-9]+[\- ][0-9Xx]\b |
+| ISBN13  | Any structurally plausible 13-digit ISBN* | \b97[89][0-9]{10}\b&#124;\b(?=(?:[0-9]+[\- ]){4})97[89][\- 0-9]{13}[0-9]\b |
+| ISSN    | 8 digits with a hyphen in the middle, where the last digit may be an X | \b[0-9]{4}[ \-]?[0-9]{3}[0-9Xx]\b |
+| BL001   | 9 digits | \b[0-9]{9}\b |
+| BNB     | See https://www.bl.uk/collection-metadata/metadata-services/structure-of-the-bnb-number | \bGB([0-9]{7}&#124;[A-Z][0-9][A-Z0-9][0-9]{4})\b |
+| LCCN    | See https://www.loc.gov/marc/bibliographic/bd010.html | \b[a-z][a-z ][a-z ]?[0-9]{2}[0-9]{6} ?\b |
+| OCLC    | "(OCoLC)" followed by digits | \(OCoLC\)[0-9]+\b |
+| ISNI    | 16 digits separated into groups of 4 with spaces or hyphens | \b[0]{4}[ \-]?[0-9]{4}[ \-]?[0-9]{4}[ \-]?[0-9]{3}[0-9Xx]\b |
+| FAST    | "fst" followed by digits | \bfst[0-9]{8}\b |
+
+*Note: The ISBN check digit is *not* validated.
+
+Multiple fields and subfields may be specified. Fields may be repeated with different subfields.
 
 Example:
 
-    001
-    020$a 
-    015$a
-    100$abcd
-    100$e
-    362$
+    001 BL001
+    015$a	BNB
+    020	ISBN
+    020$z	ISBN10
+    500$a	\b[a-z]{7}\b
+    035$a	OCLC
+
+In the example above, field 500 subfield $a is being searched for 7-character words.
 
 #### Options
 
-##### --isbn
+##### --conv
 
-If option --isbn is used, the contents of the following subfields will be tested to see if they confirm to the 
-appropriate pattern. Subfields will be normalized to follow this pattern wherever possible.
-- 001 - 9-digit integer, padded with leading 0s
-- 010$a - structure specified at https://www.loc.gov/marc/bibliographic/bd010.html; whitespace is preserved
-- 015$a, 015$z - any combination of alphanumeric characters, without leading or trailing spaces
-- 020$a, 020$z, 021$a, 021$z - a structurally plausible ISBN, with either 10 or 13 digits 
-  (where the last digit of a 10-digit ISBN may be the character X); note that the script does not check validity of ISBNs
-- 022$a, 022$l, 022$m, 022$y, 022$z - a structurally valid ISSN, consisting of 8 digits from the set [0-9X], 
-  separated into two groups of four by a single hyphen 
-- 024$a - any combination of alphanumeric characters, without leading or trailing spaces
-
-##### --trim
-
-If option --trim is used, all subfields will be trimmed to remove leading and trailing spaces, 
-and whitespace within subfields will be normalized (e.g.. "  " will be replaced by " ").
+If option --conv is used, 10-digit ISBNs will be converted to 13-digit form whenever possible
+(i.e. whenever they are valid ISBNs).
 
 ##### --rid
 
 By default, the output file consists of a single column of strings.
-If option --rid is used, the output file will consist of two columns: the first column will be the record control number from field 001
-and the second column will be as per the default output.
-
-##### --delim
-
-This option takes an argument. Example:
-
-    get_fields -i input.lex -o output.txt -c config.cfg --delim=--
-
-Whenever multiple subfields of the same field are specified within the config file, 
-these will be separated by a delimited when they are written to the output file.
-The default delimiter is a single white space (" ").
-Option --delim  can be used to specify an alternative delimiter.
-
-
+If option --rid is used, the output file will consist of two columns: the first column will be the record control number 
+from field 001 and the second column will be as per the default output.
