@@ -1,8 +1,8 @@
 import logging
 
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler('catbridge.log')
-formatter = logging.Formatter('[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO,
+                    format='[%(asctime)s]\t{%(pathname)s:%(lineno)d}\t%(levelname)s\t%(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    filename='catbridge.log',
+                    filemode='w')
+logger = logging.getLogger()

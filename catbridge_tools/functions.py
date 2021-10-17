@@ -1,9 +1,10 @@
 from collections import OrderedDict
 import datetime
-import re
+import getopt
 import sys
 import time
 from functools import wraps
+from catbridge_tools.isbn_tools import *
 from catbridge_tools.logs import *
 
 ARGS = OrderedDict([
@@ -22,6 +23,7 @@ class CBError(Exception):
     """Base class for exceptions in this module."""
 
     def __init__(self, value):
+        logging.error(str(value))
         self.value = value
 
     def __str__(self):
@@ -41,10 +43,16 @@ class CatBridge:
         return(f'========================================\n{self.name}\n'
                f'========================================\n{self.usage}\n')
 
+    def info(self) -> None:
+        logging.info(self.name)
+        print(repr(self))
+
     def add_args(self, args: OrderedDict) -> None:
+        logging.debug('Updating args')
         self.args.update(args)
 
     def add_opts(self, opts: OrderedDict) -> None:
+        logging.debug('Updating opts')
         self.opts = OrderedDict(opts)
         self.opts.update(OPTS)
 
@@ -64,22 +72,34 @@ class CatBridge:
         print('\n')
         date_time_exit(message='')
 
-    def parse_args(self, opts: dict) -> None:
-        for opt, arg in opts:
-            opt = opt.strip('-')
-            if opt == 'help':
-                self.hint()
-            elif opt == 'debug':
-                logger.setLevel(logging.DEBUG)
-            elif opt + '=' in self.opts and arg:
-                self.opts[opt + '='][1] = arg
-            elif opt in self.opts:
-                self.opts[opt][1] = True
-            elif opt in self.args:
-                self.args[opt][1] = arg
-            else:
-                logging.error(f'Error: Option {opt} not recognised')
-                raise CBError(f'Error: Option {opt} not recognised')
+    def parse_args(self, argv) -> None:
+        try:
+            opts, args = getopt.getopt(argv, ''.join([f'{a}:' for a in self.args]), [o for o in self.opts.keys()])
+        except getopt.GetoptError as err:
+            raise CBError({err})
+        logging.debug(f'opts from getopt.getopt: {str(opts)}')
+        logging.debug(f'args from getopt.getopt: {str(opts)}')
+        if opts is None or not opts:
+            logging.info('No options set')
+            self.hint()
+        else:
+            for opt, arg in opts:
+                opt = opt.strip('-')
+                if opt == 'help':
+                    self.hint()
+                elif opt == 'debug':
+                    logger.setLevel(logging.DEBUG)
+                    logging.info('Logging level set to DEBUG')
+                elif opt + '=' in self.opts and arg:
+                    self.opts[opt + '='][1] = arg
+                elif opt in self.opts:
+                    self.opts[opt][1] = True
+                elif opt in self.args:
+                    self.args[opt][1] = arg
+                else:
+                    raise CBError(f'Error: Option {opt} not recognised')
+        logging.debug(repr(self.args))
+        logging.debug(repr(self.opts))
 
 
 def timeit_wrapper(func):
@@ -97,9 +117,15 @@ def normalize_space(s: str) -> str:
     return re.sub(r'\s+', ' ', s).strip()
 
 
+def log_print(message: str = '', level=logging.INFO, end='\n') -> None:
+    logging.log(level, message)
+    print(message, end=end)
+
+
 def date_time_message(message: str = '') -> None:
     """Function to print a message, followed by the current date and time"""
     if message != '':
+        logging.info(message)
         print('\n\n{} ...\n----------------------------------------'.format(message))
     print(str(datetime.datetime.now()))
 

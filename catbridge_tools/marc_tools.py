@@ -10,7 +10,6 @@
 # Import required modules
 import os
 import unicodedata
-from catbridge_tools.isbn_tools import *
 from catbridge_tools.functions import *
 from io import BytesIO
 from typing import Callable
@@ -70,7 +69,7 @@ def clean(string):
     if string is None or not string: return None
     string = re.sub(r'[\u0022\u055A\u05F4\u2018-\u201F\u275B-\u275E\uFF07]', '\'', string)
     string = re.sub(r'[\u0000-\u001F\u0080-\u009F\u2028\u2029]+', '', string)
-    string = re.sub(r'^[:;/\s\?\$\.,\\\]\)}]|[;/\s\$\.,\\\[\({]+$', '', string.strip())
+    string = re.sub(r'^[:;/\s?$.,\\\])}]|[;/\s$.,\\\[({]+$', '', string.strip())
     string = re.sub(r'\s+', ' ', string).strip()
     if string is None or not string: return None
     return unicodedata.normalize('NFC', string)
@@ -97,7 +96,7 @@ class MARCReader(object):
 
     def close(self):
         self.count -= 1
-        print(f'100% [{str(self.count)} records] processed')
+        log_print(f'100% [{str(self.count)} records] processed')
         if self.file_handle:
             self.file_handle.close()
             self.file_handle = None
@@ -109,7 +108,8 @@ class MARCReader(object):
         if len(first5) < 5: raise RecordLengthError
         self.processed += int(first5)
         if self.count % 1000 == 0:
-            print(f'{str(int(100*self.processed / self.__sizeof__()))}% [{str(self.count)} records] processed', end='\r')
+            log_print(f'{str(int(100*self.processed / self.__sizeof__()))}% [{str(self.count)} records] processed',
+                      end='\r')
         return Record(first5 + self.file_handle.read(int(first5) - 5))
 
 
@@ -159,7 +159,7 @@ class Record(object):
         try:
             self.leader = marc[0:LEADER_LENGTH].decode('ascii')
         except:
-            print('Record has problem with Leader and cannot be processed')
+           logging.warning(f'Encountered record with Leader that could not be processed')
         if len(self.leader) != LEADER_LENGTH: raise LeaderError
 
         # Extract the byte offset where the record data starts
@@ -303,37 +303,13 @@ class Field(object):
             return self.data.replace(' ', '#')
         return ' '.join(subfield[1] for subfield in self if subfield[0] in subfields)
 
-        '''
-- 010$a - structure specified at https://www.loc.gov/marc/bibliographic/bd010.html
-- 022$a, 022$l, 022$m, 022$y, 022$z - a structurally valid ISSN, consisting of 8 digits from the set [0-9X], 
-separated into two groups of four by a single hyphen 
-'''
-
-
-
-    def get_subfields(self, *codes, normalize=False, cn=False):
+    def get_subfields(self, *codes):
         if self.is_control_field() or self.tag in ALEPH_CONTROL_FIELDS:
-            if self.tag == '001' and cn:
-                return [(f'000000000{re.sub(r"[^0-9]", "", self.data)}')[-9:], ]
-            if normalize:
-                return [normalize_space(self.data),]
             return [self.data,]
         values = []
         for subfield in self:
-            if len(codes) == 0 or subfield[0] in codes:
-                if (self.tag == '015' and subfield[0] in ['a', 'z']) or (self.tag == '024' and subfield[0] == 'a'):
-                    values.append(re.sub(r'[^0-9a-zA-Z]', '', str(subfield[1])))
-                elif self.tag in ['020', '021'] and subfield[0] in ['a', 'z']:
-                    values.append(str(Isbn(subfield[1]).isbn.trim))
-                elif self.tag == '015' and subfield[0] in ['a', 'l', 'm', 'y', 'z']:
-                    temp = (re.sub(r'X(?!$)', '', re.sub(r'[^0-9X]', '', str(subfield[1]).upper())) + '00000000')[:8]
-                    values.append(f'{temp[:4]}-{temp[4:]}')
-                elif self.tag == '010' and subfield[0] == 'a':
-                    values.append(re.sub(r'[^0-9a-zA-Z ]', '', str(subfield[1])))
-                elif normalize:
-                    values.append(normalize_space(str(subfield[1])))
-                else:
-                    values.append(str(subfield[1]))
+            if len(codes) == 0 or not codes or subfield[0] in codes:
+                values.append(str(subfield[1]))
         return values
 
     def is_control_field(self):
