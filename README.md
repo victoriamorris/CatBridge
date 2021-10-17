@@ -68,7 +68,7 @@ The fields and subfields to be extracted are specified in a config file.
     
     Options:
         --conv  Convert 10-digit ISBNs to 13-digit form where possible
-        --rid	Include record ID as the first column of the output file
+        --rid   Include record ID as the first column of the output file
         --tidy  Sort and de-duplicate list
 
         --debug	Debug mode.
