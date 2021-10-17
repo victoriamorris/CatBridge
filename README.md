@@ -68,6 +68,7 @@ The fields and subfields to be extracted are specified in a config file.
     Options:
         --conv  Convert 10-digit ISBNs to 13-digit form where possible
         --rid	Include record ID as the first column of the output file
+        --tidy  Sort and de-duplicate list
 
         --debug	Debug mode.
         --help	Show help message and exit.
@@ -140,3 +141,10 @@ If option --conv is used, 10-digit ISBNs will be converted to 13-digit form when
 By default, the output file consists of a single column of strings.
 If option --rid is used, the output file will consist of two columns: the first column will be the record control number 
 from field 001 and the second column will be as per the default output.
+
+##### --tidy
+
+If option --tidy is used, the list of control numbers in the output file will be sorted and de-duplicated.
+Any duplicate control numbers will be written to an additional output file named with the prefix "dp-".
+
+Note: option --tidy cannot be used at the same time as option --rid

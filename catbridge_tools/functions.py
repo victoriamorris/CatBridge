@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import datetime
+import gc
 import getopt
 import sys
 import time

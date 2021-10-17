@@ -66,12 +66,14 @@ class BaseAddressError(Exception):
 
 
 def clean(string):
-    if string is None or not string: return None
+    if string is None or not string:
+        return None
     string = re.sub(r'[\u0022\u055A\u05F4\u2018-\u201F\u275B-\u275E\uFF07]', '\'', string)
     string = re.sub(r'[\u0000-\u001F\u0080-\u009F\u2028\u2029]+', '', string)
     string = re.sub(r'^[:;/\s?$.,\\\])}]|[;/\s$.,\\\[({]+$', '', string.strip())
     string = re.sub(r'\s+', ' ', string).strip()
-    if string is None or not string: return None
+    if string is None or not string:
+        return None
     return unicodedata.normalize('NFC', string)
 
 
@@ -104,25 +106,31 @@ class MARCReader(object):
     def __next__(self):
         self.count += 1
         first5 = self.file_handle.read(5)
-        if not first5: raise StopIteration
-        if len(first5) < 5: raise RecordLengthError
+        if not first5:
+            raise StopIteration
+        if len(first5) < 5:
+            raise RecordLengthError
         self.processed += int(first5)
         if self.count % 1000 == 0:
-            log_print(f'{str(int(100*self.processed / self.__sizeof__()))}% [{str(self.count)} records] processed',
-                      end='\r')
+            print(f'{str(int(100*self.processed / self.__sizeof__()))}% [{str(self.count)} records] processed',
+                  end='\r')
+        if self.count % 10000 == 0:
+            gc.collect()
         return Record(first5 + self.file_handle.read(int(first5) - 5))
 
 
 class Record(object):
-    def __init__(self, data: bytes=None, leader=' ' * LEADER_LENGTH):
+    def __init__(self, data: bytes = None, leader=' ' * LEADER_LENGTH):
         self.leader = '{}22{}4500'.format(leader[0:10], leader[12:20])
         self.fields = list()
         self.pos = 0
-        if len(data) > 0: self.decode_marc(data)
+        if len(data) > 0:
+            self.decode_marc(data)
 
     def __getitem__(self, tag):
         fields = self.get_fields(tag)
-        if len(fields) > 0: return fields[0]
+        if len(fields) > 0:
+            return fields[0]
         return None
 
     def __contains__(self, tag):
@@ -148,7 +156,8 @@ class Record(object):
         return len(self.get_fields())
 
     def get_fields(self, *args):
-        if len(args) == 0: return self.fields
+        if len(args) == 0:
+            return self.fields
         return [f for f in self.fields if f.tag in args]
 
     def add_field(self, *fields):
@@ -158,14 +167,17 @@ class Record(object):
         # Extract record leader
         try:
             self.leader = marc[0:LEADER_LENGTH].decode('ascii')
-        except:
-           logging.warning(f'Encountered record with Leader that could not be processed')
-        if len(self.leader) != LEADER_LENGTH: raise LeaderError
+        except Exception as err:
+            logging.warning(f'Encountered record with Leader that could not be processed: {err}')
+        if len(self.leader) != LEADER_LENGTH:
+            raise LeaderError
 
         # Extract the byte offset where the record data starts
         base_address = int(marc[12:17])
-        if base_address <= 0: raise BaseAddressError
-        if base_address >= len(marc): raise BaseAddressLengthError
+        if base_address <= 0:
+            raise BaseAddressError
+        if base_address >= len(marc):
+            raise BaseAddressLengthError
 
         # Extract directory
         # base_address-1 is used since the directory ends with an END_OF_FIELD byte
@@ -198,15 +210,19 @@ class Record(object):
                 subs = entry_data.split(SUBFIELD_INDICATOR.encode('ascii'))
                 # Missing indicators are recorded as blank spaces.
                 # Extra indicators are ignored.
-                try: subs[0] = subs[0].decode('ascii') + '  '
-                except: subs[0] = '   '
+                try:
+                    subs[0] = subs[0].decode('ascii') + '  '
+                except Exception:
+                    subs[0] = '   '
                 first_indicator, second_indicator = subs[0][0], subs[0][1]
 
                 for subfield in subs[1:]:
-                    if len(subfield) == 0: continue
+                    if len(subfield) == 0:
+                        continue
                     try:
                         code, data = subfield[0:1].decode('ascii'), subfield[1:].decode('utf-8', 'strict')
-                    except: pass
+                    except Exception:
+                        pass
                     else:
                         subfields.append(code)
                         subfields.append(data)
@@ -218,7 +234,8 @@ class Record(object):
             self.add_field(field)
             field_count += 1
 
-        if field_count == 0: raise FieldsError
+        if field_count == 0:
+            raise FieldsError
 
     def as_marc(self):
         fields, directory = b'', b''
@@ -246,8 +263,10 @@ class Record(object):
 class Field(object):
 
     def __init__(self, tag, indicators=None, subfields=None, data=''):
-        if indicators is None: indicators = []
-        if subfields is None: subfields = []
+        if indicators is None:
+            indicators = []
+        if subfields is None:
+            subfields = []
         indicators = [str(x) for x in indicators]
 
         # Normalize tag to three digits
@@ -268,7 +287,8 @@ class Field(object):
 
     def __getitem__(self, subfield):
         subfields = self.get_subfields(subfield)
-        if len(subfields) > 0: return subfields[0]
+        if len(subfields) > 0:
+            return subfields[0]
         return None
 
     def __contains__(self, subfield):
@@ -305,7 +325,7 @@ class Field(object):
 
     def get_subfields(self, *codes):
         if self.is_control_field() or self.tag in ALEPH_CONTROL_FIELDS:
-            return [self.data,]
+            return [self.data, ]
         values = []
         for subfield in self:
             if len(codes) == 0 or not codes or subfield[0] in codes:
@@ -313,8 +333,10 @@ class Field(object):
         return values
 
     def is_control_field(self):
-        if self.tag < '010' and self.tag.isdigit(): return True
-        if self.tag in ALEPH_CONTROL_FIELDS: return True
+        if self.tag < '010' and self.tag.isdigit():
+            return True
+        if self.tag in ALEPH_CONTROL_FIELDS:
+            return True
         return False
 
     def as_marc(self):

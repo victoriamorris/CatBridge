@@ -66,8 +66,12 @@ def main(argv=None):
     cb.add_opts(OrderedDict([
         ('conv', ['Convert 10-digit ISBNs to 13-digit form where possible', False]),
         ('rid', ['Include record ID as the first column of the output file', False]),
+        ('tidy', ['Sort and de-duplicate list', False]),
     ]))
     cb.parse_args(argv)
+
+    if cb.opts['rid'][1] and cb.opts['tidy'][1]:
+        raise CBError(f'Error: options rid and tidy cannot be used at the same time')
 
     # Check file locations
     for f in ['i', 'c']:
@@ -107,7 +111,11 @@ def main(argv=None):
     conv = cb.opts['conv'][1]
     if conv:
         logging.info('Converting ISBN-10 to ISBN-13')
+    tidy = cb.opts['tidy'][1]
+    if tidy:
+        logging.info('Producing tidy output')
 
+    cn, cn_dupes = set(), set()
     reader = MARCReader(cb.args['i'][1])
     ofile = open(cb.args['o'][1], mode='w', encoding='utf-8', errors='replace')
 
@@ -131,11 +139,28 @@ def main(argv=None):
                             t = m.group(0).strip()
                         if conv and is_isbn_10(t):
                             t = isbn_convert(t)
-                        if rid:
-                            t = f'{record_id}\t{t}'
-                        ofile.write(f'{t}\n')
+                        if tidy:
+                            if t in cn:
+                                cn_dupes.add(t)
+                            else:
+                                cn.add(t)
+                        else:
+                            if rid:
+                                t = f'{record_id}\t{t}'
+                            ofile.write(f'{t}\n')
+    if tidy:
+        for t in sorted(cn):
+            ofile.write(f'{t}\n')
+
     for file in [reader, ofile]:
         file.close()
+
+    if tidy:
+        head, tail = os.path.split(cb.args['o'][1])
+        ofile = open(os.path.join(head, f'dp-{tail}'), mode='w', encoding='utf-8', errors='replace')
+        for t in sorted(cn_dupes):
+            ofile.write(f'{t}\n')
+        ofile.close()
 
     date_time_exit()
 

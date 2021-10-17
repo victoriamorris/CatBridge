@@ -20,7 +20,7 @@ requirements = [
 # Setup
 setup(
     console=[
-        'bin/get_fields.py',
+        'bin/cn_find.py',
     ],
     zipfile=None,
     options={
@@ -31,13 +31,13 @@ setup(
     name='catbridge_tools',
     version='1.0.0',
     author='Victoria Morris',
-    url='',
+    url='https://github.com/victoriamorris/CatBridge',
     license='MIT',
     description='Tools for working with MARC data in Catalogue Bridge.',
     long_description='Tools for working with MARC data in Catalogue Bridge.',
     packages=['catbridge_tools'],
     scripts=[
-        'bin/get_fields.py',
+        'bin/cn_find.py',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
