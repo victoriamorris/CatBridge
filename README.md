@@ -40,6 +40,7 @@ and the .exe files have been copied to an executable path.
 | Original Catalogue Bridge tool | New tool | Original syntax | Corresponding new syntax |
 | -------- | -------- | -------- | -------- |
 | cn-find | [cn-find](#cn_find) | CN-FIND \<infile> \<outfile> \<configfile> | cn_find -i <input_file> -o <output_file> -c <config_file> |
+| cn-tidy | [cn-find](#cn_find) | CN-FIND \<infile> | cn_find -i <input_file> -o <output_file> -c <config_file> --tidy |
 
 ### Features common to all scripts
 
