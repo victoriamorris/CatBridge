@@ -89,6 +89,7 @@ class MARCReader(object):
         self.processed = 0
         self.path_to_file = path_to_file
         self.file_handle = open(path_to_file, mode='rb')
+        self.silent = False
 
     def __sizeof__(self):
         return os.path.getsize(self.path_to_file)
@@ -96,9 +97,16 @@ class MARCReader(object):
     def __iter__(self):
         return self
 
+    def __len__(self):
+        self.silent = True
+        for record in self:
+            continue
+        return self.count - 1
+
     def close(self):
         self.count -= 1
-        log_print(f'100% [{str(self.count)} records] processed')
+        if not self.silent:
+            log_print(f'100% [{str(self.count)} records] processed')
         if self.file_handle:
             self.file_handle.close()
             self.file_handle = None
@@ -111,11 +119,12 @@ class MARCReader(object):
         if len(first5) < 5:
             raise RecordLengthError
         self.processed += int(first5)
-        if self.count % 1000 == 0:
-            print(f'{str(int(100*self.processed / self.__sizeof__()))}% [{str(self.count)} records] processed',
-                  end='\r')
-        if self.count % 10000 == 0:
-            gc.collect()
+        if not self.silent:
+            if self.count % 1000 == 0:
+                print(f'{str(int(100*self.processed / self.__sizeof__()))}% [{str(self.count)} records] processed',
+                      end='\r')
+                if self.count % 100000 == 0:
+                    gc.collect()
         return Record(first5 + self.file_handle.read(int(first5) - 5))
 
 
@@ -147,7 +156,7 @@ class Record(object):
         self.__pos += 1
         return self.fields[self.__pos - 1]
 
-    def __str__(self):
+    def __repr__(self):
         text_list = ['=LDR  {}'.format(self.leader)]
         text_list.extend([str(field) for field in self.fields])
         return '\n'.join(text_list) + '\n'
@@ -259,6 +268,14 @@ class Record(object):
         leader = strleader.encode('utf-8')
         return leader + directory + fields
 
+    def id(self) -> str:
+        try:
+            self.id = self['001'].data.strip()
+        except KeyError:
+            logging.warning(f'Record lacking record id with title {str(self["245"]) or "[No title either!]"}')
+            self.id = '[No record ID]'
+        return self.id
+
 
 class Field(object):
 
@@ -304,7 +321,7 @@ class Field(object):
             return subfield
         raise StopIteration
 
-    def __str__(self):
+    def __repr__(self):
         if self.is_control_field() or self.tag in ALEPH_CONTROL_FIELDS:
             return '={}  {}'.format(self.tag, self.data.replace(' ', '#'))
         text = '={}  '.format(self.tag)
@@ -318,7 +335,7 @@ class Field(object):
             text += '${}{}'.format(subfield[0], subfield[1])
         return text
 
-    def text(self, subfields=''):
+    def str(self, subfields=''):
         if self.is_control_field() or self.tag in ALEPH_CONTROL_FIELDS:
             return self.data.replace(' ', '#')
         return ' '.join(subfield[1] for subfield in self if subfield[0] in subfields)

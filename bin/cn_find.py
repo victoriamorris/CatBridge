@@ -12,10 +12,7 @@ __status__ = '4 - Beta Development'
 
 
 NAME = 'cn_find'
-USAGE = 'A utility to extract control numbers from specified fields and subfields within a file of MARC records'
-SUMMARY = 'Extract control numbers from fields and subfields specified in <config_file> ' \
-          'from MARC records present in <input_file> ' \
-          'and write to <output_file>'
+SUMMARY = 'A utility to extract control numbers from specified fields and subfields within a file of MARC records'
 
 
 RE_CONTROL_NUMBERS = {
@@ -61,30 +58,24 @@ def main(argv=None):
         name = str(sys.argv[1])
 
     re_config = re.compile(r'^([0-9A-Z]{3})\s*\$?\s*([a-z0-9]?)\s*\t(.*?)\s*$')
-    cb = CatBridge(NAME, USAGE, SUMMARY)
-    cb.info()
-    cb.add_opts(OrderedDict([
-        ('conv', ['Convert 10-digit ISBNs to 13-digit form where possible', False]),
-        ('rid', ['Include record ID as the first column of the output file', False]),
-        ('tidy', ['Sort and de-duplicate list', False]),
-    ]))
-    cb.parse_args(argv)
+    cb = CatBridge(NAME, SUMMARY, ['i+', 'o', 'c'])
+    cb.parser.add_argument('--conv', required=False, action='store_true',
+                           help='Convert 10-digit ISBNs to 13-digit form where possible')
+    cb.parser.add_argument('--rid', required=False, action='store_true',
+                           help='Include record ID as the first column of the output file')
+    cb.parser.add_argument('--tidy', required=False, action='store_true',
+                           help='Sort and de-duplicate list')
 
-    if cb.opts['rid'][1] and cb.opts['tidy'][1]:
+    args = cb.parse_args(argv)
+
+    if args.rid and args.tidy:
         raise CBError(f'Error: options rid and tidy cannot be used at the same time')
-
-    # Check file locations
-    for f in ['i', 'c']:
-        logging.info(f'File role {f} location {str(cb.args[f][1])}')
-        if cb.args[f][1] and not os.path.isfile(cb.args[f][1]):
-            raise CBError(f'Error: Could not locate {cb.args[f][0]} at {str(cb.args[f][1])}')
-
-    # Files look ok: start program
-    date_time_message('Starting processing')
 
     fields_to_find = []
 
-    cfile = open(cb.args['c'][1], mode='r', encoding='utf-8', errors='replace')
+    check_file_location(args.c[0], 'config file')
+    date_time_message(f'Reading config file from {str(args.c[0])}')
+    cfile = open(args.c[0], mode='r', encoding='utf-8', errors='replace')
     for lineno, line in enumerate(cfile):
         line = line.strip()
         m = re_config.match(line)
@@ -105,58 +96,57 @@ def main(argv=None):
     cfile.close()
     logging.info(f'Search target: {repr(fields_to_find)}')
 
-    rid = cb.opts['rid'][1]
-    if rid:
+    if args.rid:
         logging.info('Including record ID in first column')
-    conv = cb.opts['conv'][1]
-    if conv:
+    if args.conv:
         logging.info('Converting ISBN-10 to ISBN-13')
-    tidy = cb.opts['tidy'][1]
-    if tidy:
+    if args.tidy:
         logging.info('Producing tidy output')
 
     cn, cn_dupes = set(), set()
-    reader = MARCReader(cb.args['i'][1])
-    ofile = open(cb.args['o'][1], mode='w', encoding='utf-8', errors='replace')
+    ofile = open(args.o[0], mode='w', encoding='utf-8', errors='replace')
 
-    for record in reader:
-        try:
-            record_id = record['001'].data.strip()
-        except KeyError:
-            logging.warning(f'Record lacking record id at position {str(reader.count)}')
-            record_id = '[No record ID]'
-        for (f, s, r, regex) in fields_to_find:
-            for field in record.get_fields(f):
-                if not s:
-                    subfields = field.get_subfields()
-                else:
-                    subfields = field.get_subfields(s)
-                for subfield in subfields:
-                    for m in regex.finditer(subfield):
-                        if r in CONTROL_NUMBER_CLEANING:
-                            t = CONTROL_NUMBER_CLEANING[r](m.group(0))
+    for a in args.i:
+        file_list = glob.glob(a)
+        for file in file_list:
+            if not os.path.isfile(file):
+                raise CBError(f'Error: Could not locate {str(file)}')
+            date_time_message(f'Processing file {str(file)}')
+            reader = MARCReader(file)
+            for record in reader:
+                for (f, s, r, regex) in fields_to_find:
+                    for field in record.get_fields(f):
+                        if not s:
+                            subfields = field.get_subfields()
                         else:
-                            t = m.group(0).strip()
-                        if conv and is_isbn_10(t):
-                            t = isbn_convert(t)
-                        if tidy:
-                            if t in cn:
-                                cn_dupes.add(t)
-                            else:
-                                cn.add(t)
-                        else:
-                            if rid:
-                                t = f'{record_id}\t{t}'
-                            ofile.write(f'{t}\n')
-    if tidy:
+                            subfields = field.get_subfields(s)
+                        for subfield in subfields:
+                            for m in regex.finditer(subfield):
+                                if r in CONTROL_NUMBER_CLEANING:
+                                    t = CONTROL_NUMBER_CLEANING[r](m.group(0))
+                                else:
+                                    t = m.group(0).strip()
+                                if args.conv and is_isbn_10(t):
+                                    t = isbn_convert(t)
+                                if args.tidy:
+                                    if t in cn:
+                                        cn_dupes.add(t)
+                                    else:
+                                        cn.add(t)
+                                else:
+                                    if args.rid:
+                                        t = f'{record.id}\t{t}'
+                                    ofile.write(f'{t}\n')
+            reader.close()
+
+    if args.tidy:
         for t in sorted(cn):
             ofile.write(f'{t}\n')
 
-    for file in [reader, ofile]:
-        file.close()
+    ofile.close()
 
-    if tidy:
-        head, tail = os.path.split(cb.args['o'][1])
+    if args.tidy:
+        head, tail = os.path.split(args.o[0])
         ofile = open(os.path.join(head, f'dp-{tail}'), mode='w', encoding='utf-8', errors='replace')
         for t in sorted(cn_dupes):
             ofile.write(f'{t}\n')

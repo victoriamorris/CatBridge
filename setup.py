@@ -21,6 +21,7 @@ requirements = [
 setup(
     console=[
         'bin/cn_find.py',
+        'bin/marc_count.py',
     ],
     zipfile=None,
     options={
@@ -38,6 +39,7 @@ setup(
     packages=['catbridge_tools'],
     scripts=[
         'bin/cn_find.py',
+        'bin/marc_count.py',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

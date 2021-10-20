@@ -39,8 +39,9 @@ and the .exe files have been copied to an executable path.
 
 | Original Catalogue Bridge tool | New tool | Original syntax | Corresponding new syntax |
 | -------- | -------- | -------- | -------- |
-| cn-find | [cn-find](#cn_find) | CN-FIND \<infile> \<outfile> \<configfile> | cn_find -i <input_file> -o <output_file> -c <config_file> |
+| cn-find | [cn-find](#cn_find) | CN-FIND \<infile> \<outfile> \<configfile> | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file> |
 | cn-tidy | [cn-find](#cn_find) | CN-FIND \<infile> | cn_find -i <input_file> -o <output_file> -c <config_file> --tidy |
+| marccount | [marc_count](#marc_count) | MARCCOUNT \<infile> \[\<infile>\] | marc_count -i <input_file> \[\<input_file> ...\] |
 
 ### Features common to all scripts
 
@@ -50,7 +51,7 @@ Unless otherwise specified, text files are UTF-8-encoded, with .txt, .csv or .ts
 Config files are also text files, but may have the file extension .cfg for convenience.
 
 #### Help
-For any script, use the option --help to display help text.
+For any script, use the option --help, or run the script without arguments/options, to display help text.
 
 #### Logs and debugging
 Logs will be written to catbridge.log within the working directory. 
@@ -58,13 +59,17 @@ This is a UTF-8 encoded text field and can be read in any text editor.
 The default logging level is INFO; if option --debug is set, the logging level is changed to DEBUG.
 See https://docs.python.org/3/library/logging.html#levels for information about logging levels.
 
+#### Command line arguments
+Command line arguments may be provided in any order.
+
 ### cn_find
 
-*cn_find* is a utility which extracts extract control numbers from specified fields and subfields within a file of MARC records.
+*cn_find* is a utility which extracts extract control numbers from specified fields and subfields 
+within a file of MARC records.
 
 The fields and subfields to be extracted are specified in a config file.
 
-    Usage: cn_find -i <input_file> -o <output_file> -c <config_file> [options]
+    Usage: cn_find -i <input_file> [<input_file> ...] -o <output_file> -c <config_file> [options]
     
     Options:
         --conv  Convert 10-digit ISBNs to 13-digit form where possible
@@ -77,6 +82,14 @@ The fields and subfields to be extracted are specified in a config file.
 #### Files
 
 <input_file> is the name of the input file, which must be a file of MARC 21 records.
+
+Multiple input files may be listed. E.g.
+
+    cn_find -i file1.lex file2.lex file3.lex -o output.txt -c config.cfg
+
+Wildcard characters may be used. E.g. 
+
+    cn_find -i file*.lex -o output.txt -c config.cfg
 
 <output_file> is the name of the file to which the control numbers will be written. This should be a text file.
 
@@ -149,3 +162,28 @@ If option --tidy is used, the list of control numbers in the output file will be
 Any duplicate control numbers will be written to an additional output file named with the prefix "dp-".
 
 Note: option --tidy cannot be used at the same time as option --rid
+
+### marc_count
+
+*marc_count* is a utility which counts the number of records present within one or more file(s) of MARC records.
+
+    Usage: marc_count -i <input_file> [<input_file> ...] [options]
+    
+    Options:
+        --debug	Debug mode.
+        --help	Show help message and exit.
+
+#### Files
+
+<input_file> is the name of the input file, which must be a file of MARC 21 records.
+
+Multiple input files may be listed. E.g.
+
+    cn_find -i file1.lex file2.lex file3.lex -o output.txt -c config.cfg
+
+Wildcard characters may be used. E.g. 
+
+    cn_find -i file*.lex -o output.txt -c config.cfg
+
+This will count all the files with .lex suffix in the current directory, and output numbers of records per file 
+as well as a total for all files.
