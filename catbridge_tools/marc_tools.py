@@ -28,7 +28,7 @@ __status__ = '4 - Beta Development'
 
 LEADER_LENGTH, DIRECTORY_ENTRY_LENGTH = 24, 12
 SUBFIELD_INDICATOR, END_OF_FIELD, END_OF_RECORD = chr(0x1F), chr(0x1E), chr(0x1D)
-ALEPH_CONTROL_FIELDS = ['DB ', 'FMT', 'SYS']
+ALEPH_CONTROL_FIELDS = ['DB ', 'SYS']
 
 
 # ====================
@@ -58,6 +58,10 @@ class BaseAddressLengthError(Exception):
 
 class BaseAddressError(Exception):
     def __str__(self): return 'Error locating base address of record'
+
+
+class RecordWritingError(Exception):
+    def __str__(self): return 'Error writing record'
 
 
 # ====================
@@ -128,12 +132,32 @@ class MARCReader(object):
         return Record(first5 + self.file_handle.read(int(first5) - 5))
 
 
+class MARCWriter(object):
+
+    def __init__(self, path_to_file):
+        self.count = 0
+        self.processed = 0
+        self.path_to_file = path_to_file
+        self.file_handle = open(path_to_file, mode='wb')
+        self.silent = False
+
+    def write(self, record):
+        if not isinstance(record, Record):
+            raise RecordWritingError
+        self.file_handle.write(record.as_marc())
+
+    def close(self):
+        if self.file_handle:
+            self.file_handle.close()
+            self.file_handle = None
+
+
 class Record(object):
     def __init__(self, data: bytes = None, leader=' ' * LEADER_LENGTH):
         self.leader = '{}22{}4500'.format(leader[0:10], leader[12:20])
         self.fields = list()
         self.pos = 0
-        if len(data) > 0:
+        if data and len(data) > 0:
             self.decode_marc(data)
 
     def __getitem__(self, tag):
@@ -164,10 +188,14 @@ class Record(object):
     def __sizeof__(self):
         return len(self.get_fields())
 
-    def get_fields(self, *args):
+    def get_fields(self, *args, indicators=None):
         if len(args) == 0:
             return self.fields
-        return [f for f in self.fields if f.tag in args]
+        if not indicators:
+            return [f for f in self.fields if f.tag in args]
+        return [f for f in self.fields if f.tag in args
+                and (indicators[0] == '*' or f.indicators[0].replace('#', ' ') in ['*', indicators[0].replace('#', ' ')])
+                and (indicators[1] == '*' or f.indicators[1].replace('#', ' ') in ['*', indicators[1].replace('#', ' ')])]
 
     def add_field(self, *fields):
         self.fields.extend(fields)
@@ -369,3 +397,14 @@ def map_records(f: Callable, *files: BytesIO) -> None:
     """Applies a given function to each record in a batch"""
     for file in files:
         list(map(f, MARCReader(file)))
+
+
+def is_control_field_tag(tag: str) -> bool:
+    """Function to test whether a tag denotes a control field"""
+    if not tag:
+        return False
+    if tag < '010' and tag.isdigit():
+        return True
+    if tag in ALEPH_CONTROL_FIELDS:
+        return True
+    return False
