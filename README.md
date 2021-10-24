@@ -39,8 +39,12 @@ and the .exe files have been copied to an executable path.
 
 | Original Catalogue Bridge tool | New tool | Original syntax | Corresponding new syntax |
 | -------- | -------- | -------- | -------- |
-| cn-find | [cn-find](#cn_find) | CN-FIND \<infile> \<outfile> \<configfile> | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file> |
-| cn-tidy | [cn-find](#cn_find) | CN-FIND \<infile> | cn_find -i <input_file> -o <output_file> -c <config_file> --tidy |
+| cn-find | [cn_find](#cn_find) | CN-FIND \<infile> \<outfile> \<configfile> | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file> |
+| cn-tidy | [cn_find](#cn_find) | CN-FIND \<infile> | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file> --tidy |
+| del-fld | [keep_fld](#keep_fld) | DEL-FLD \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> --delete |
+| del-fld2 | [keep_fld](#keep_fld) | DEL-FLD2 \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> --delete |
+| keep-fld | [keep_fld](#keep_fld) | KEEP-FLD \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> |
+| keep-fld2 | [keep_fld](#keep_fld) | KEEP-FLD2 \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> |
 | marccount | [marc_count](#marc_count) | MARCCOUNT \<infile> \[\<infile>\] | marc_count -i <input_file> \[\<input_file> ...\] |
 
 ### Features common to all scripts
@@ -62,6 +66,10 @@ See https://docs.python.org/3/library/logging.html#levels for information about 
 #### Command line arguments
 Command line arguments may be provided in any order.
 
+#### Control fields
+For the purposes of these scripts, a field tag is interpreted as a control field tag if and only if it 
+(a) takes a numerical value starting with two zeros, or (b) is either of the Aleph control fields "DB " or "SYS".
+
 ### cn_find
 
 *cn_find* is a utility which extracts extract control numbers from specified fields and subfields 
@@ -76,8 +84,8 @@ The fields and subfields to be extracted are specified in a config file.
         --rid   Include record ID as the first column of the output file
         --tidy  Sort and de-duplicate list
 
-        --debug	Debug mode.
-        --help	Show help message and exit.
+        --debug	Debug mode
+        --help	Show help message and exit
 
 #### Files
 
@@ -99,20 +107,34 @@ Wildcard characters may be used. E.g.
 
 The format of the configuration file is as follows, with one entry per line
 
-    FIELD TAG $ subfield character [tab] control number specification
+    =CONTROL_FIELD_TAG [double space] control_number_specification
 
-Each line must match the regular expression
+    or
 
-    ^([0-9A-Z]{3})\s*\$?\s*([a-z0-9]?)\s*\t(.*?)\s*$
+    =DATA_FIELD_TAG [double space] indicator_values $subfield_code control_number_specification
 
-The field tag is specified using three numbers or UPPERCASE letters.
+Each line must match one of the two regular expressions below.
+The first is for control fields, the second is for data fields.
 
-The subfield code are specified using a single number or lowercase letter.
-If '$' appears *without* any following subfield characters,  *all* subfields will be searched for control numbers.
+    ^=(00[0-9]|[A-Z]{3})\s*\t(.*?)\s*$
+
+    ^=[0-9A-Z]{3}  [0-9*#][0-9*#]\$[a-z0-9*]\t(.*?)\s*$
+
+Note that for data fields there are *two* spaces between the field tag and the indicators.
+
+The field tag is specified using three digits or UPPERCASE letters.
+
+For data fields, indicators are each specified using a single digit, or the character # to specify a blank indicator.
+The wildcard character * may be used to mean *any* indicator value.
+
+For data fields, the subfield code is specified using a single digit or lowercase letter.
+Alternatively, $* may be used to mean *all* subfield codes.
 
 The control number specification tells the script what kind of control number to search for within the subfield. 
 This can either take a value from a pre-defined list, 
-or a regular expression can be used to search for control numbers with any other structure.
+or a regular expression can be used to search for control numbers with any other structure. 
+The dollar sign ($) may thus function as either a regular expression metacharacter or a subfield delimiter, 
+depending on context. 
 Regular expressions are *case-sensitive*.
 
 | Control number specification | Description | Regular expression |
@@ -134,12 +156,13 @@ Multiple fields and subfields may be specified. Fields may be repeated with diff
 
 Example:
 
-    001 BL001
-    015$a	BNB
-    020	ISBN
-    020$z	ISBN10
-    500$a	\b[a-z]{7}\b
-    035$a	OCLC
+    =001    BL001
+    =015  **$a    BNB
+    =020  **$a  ISBN
+    =020  ##$z  ISBN10
+    =500  ##$a  \b[a-z]{7}\b
+    =650  *7$0  FAST
+
 
 In the example above, field 500 subfield $a is being searched for 7-character words.
 
@@ -163,15 +186,16 @@ Any duplicate control numbers will be written to an additional output file named
 
 Note: option --tidy cannot be used at the same time as option --rid
 
-### marc_count
+### keep_fld
 
-*marc_count* is a utility which counts the number of records present within one or more file(s) of MARC records.
+*keep_fld* is a utility to keep or delete specified fields within one or more file(s) of MARC records.
 
-    Usage: marc_count -i <input_file> [<input_file> ...] [options]
+    Usage: keep_fld -i <input_file> [<input_file> ...] -c <config_file> [options]
     
     Options:
-        --debug	Debug mode.
-        --help	Show help message and exit.
+        --delete    *Delete* fields specified in <config_file>
+        --debug	Debug mode
+        --help	Show help message and exit
 
 #### Files
 
@@ -179,11 +203,120 @@ Note: option --tidy cannot be used at the same time as option --rid
 
 Multiple input files may be listed. E.g.
 
-    cn_find -i file1.lex file2.lex file3.lex -o output.txt -c config.cfg
+    keep_fld -i file1.lex file2.lex file3.lex -c config.cfg
 
 Wildcard characters may be used. E.g. 
 
-    cn_find -i file*.lex -o output.txt -c config.cfg
+    keep_fld -i file*.lex -c config.cfg
+
+If option --delete is *not* used, the utility writes output for each input file to a file with the same name, 
+but	prefixed with "k-".
+
+If option --delete *is* used, the utility writes output for each input file to a file with the same name, 
+but	prefixed with "d-".
+
+#### The config file
+
+The format of the configuration file is as follows, with one entry per line.
+This format is chosen to resemble MARCbreaker (MARC screen dump) format.
+
+    =CONTROL_FIELD_TAG [double space] content_specification
+
+    or
+
+    =DATA_FIELD_TAG [double space] indicator_values $subfield_code content_specification
+
+Each line must match one of the two regular expressions below.
+The first is for control fields, the second is for data fields.
+
+    ^=(00[0-9]|[A-Z]{3})(  )?(.*?)$
+
+    ^=[0-9A-Z]{3}  [0-9*#][0-9*#]($[a-z0-9*] ?.*?)*$
+
+Note that there are *two* spaces between the field tag and the indicators/control field value.
+
+The field tag is specified using three digits or UPPERCASE letters.
+
+For data fields, indicators are each specified using a single digit, or the character # to specify a blank indicator.
+The wildcard character * may be used to mean *any* indicator value.
+
+For data fields, the subfield code is specified using a single digit or lowercase letter.
+Alternatively, $* may be used to mean *all* subfield codes.
+
+For data fields, the section <span style="color: purple">$subfield_code content_specification</span> 
+may be omitted in order to keep/delete an entire field, or repeated multiple times in order to provide different 
+instructions for several subfields.
+
+The content specification tells the script what to search for within the subfield.
+This will be interpreted by the utility as a case-sensitive regular expression.
+The dollar sign ($) may thus function as either a regular expression metacharacter or a subfield delimiter, 
+depending on context. As a subfield delimited, the dollar sign will always be followed by a subfield code;
+as a regular expression metacharacter it will either be followed by another dollar sign 
+(this one being a subfield delimiter) or will appear at the end of the string.
+
+*Note:* Field 001 will *always* be included in the output file.
+
+##### Examples
+
+To keep/delete field 041:
+
+    =041  **
+
+To keep/delete field 041 subfield $a:
+    
+    =041  **$a
+
+To keep/delete field 041 whenever the second indicator is blank:
+    
+    =041  *#
+
+To keep/delete field 041 subfield $a whenever it contains "eng":
+    
+    =041  **$aeng
+
+To keep/delete field 041 subfield $a whenever it contains a digit 
+(remember that the content specification is interpreted as a regular expression):
+    
+    =041 **$a.*[0-9].*
+
+To keep/delete field 041 subfields $a and $h whenever they are equal to "fre"
+(here the dollar sign is being used as a regular expression metacharacter as well as a subfield delimiter):
+    
+    =041  **$a^fre$$h^fre$
+
+To keep/delete any subfields of field 041 which contain an uppercase letter:
+    
+    =041  **$*.*[A-Z].*
+
+#### Options
+
+##### --delete
+
+By default, only the fields or subfields specified in the config file will be retained in the output.
+
+If option --delete is used, the specified fields and subfields will instead be deleted from the input file.
+
+### marc_count
+
+*marc_count* is a utility which counts the number of records present within one or more file(s) of MARC records.
+
+    Usage: marc_count -i <input_file> [<input_file> ...] [options]
+    
+    Options:
+        --debug	Debug mode
+        --help	Show help message and exit
+
+#### Files
+
+<input_file> is the name of the input file, which must be a file of MARC 21 records.
+
+Multiple input files may be listed. E.g.
+
+    marc_count -i file1.lex file2.lex file3.lex
+
+Wildcard characters may be used. E.g. 
+
+    marc_count -i file*.lex
 
 This will count all the files with .lex suffix in the current directory, and output numbers of records per file 
 as well as a total for all files.
