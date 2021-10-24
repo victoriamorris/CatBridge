@@ -57,7 +57,9 @@ def main(argv=None):
     if argv is None:
         name = str(sys.argv[1])
 
-    re_config = re.compile(r'^([0-9A-Z]{3})\s*\$?\s*([a-z0-9]?)\s*\t(.*?)\s*$')
+    re_config = re.compile(r'^=(?P<tag>[0-9A-Z]{3})  (?P<ind>[0-9*#][0-9*#])\$(?P<sf>[a-z0-9*])\s*\t(?P<content>.*?)\s*$|'
+                           r'^=(?P<control_tag>00[0-9]|[A-Z]{3})\s*\t(?P<data>.*?)\s*$')
+    r = str(re_config.pattern).replace('\\\\', '\\')
     cb = CatBridge(NAME, SUMMARY, ['i+', 'o', 'c'])
     cb.parser.add_argument('--conv', required=False, action='store_true',
                            help='Convert 10-digit ISBNs to 13-digit form where possible')
@@ -80,19 +82,29 @@ def main(argv=None):
         line = line.strip()
         m = re_config.match(line)
         if not m:
-            r = str(re_config.pattern).replace('\\\\', '\\')
-            raise CBError(f'Error at line {str(lineno)} of config file: '
+            raise CBError(f'Error at line {str(lineno + 1)} of config file: '
                           f'line {line} does not match pattern {r}')
-        if m[3] in RE_CONTROL_NUMBERS:
-            regex = RE_CONTROL_NUMBERS[m[3]]
+        if m.group('control_tag'):
+            tag = m.group('control_tag')
+            pattern = m.group('data')
+            indicators = None
+            subfield = None
         else:
-            logging.debug(f'Compiling regex {m[3]}')
+            tag = m.group('tag')
+            pattern = m.group('content')
+            indicators = [m.group('ind')[0], m.group('ind')[1]]
+            subfield = m.group('sf')
+
+        if pattern in RE_CONTROL_NUMBERS:
+            regex = RE_CONTROL_NUMBERS[pattern]
+        else:
+            logging.debug(f'Compiling regex {pattern}')
             try:
-                regex = re.compile(m[3])
+                regex = re.compile(pattern)
             except re.error as err:
-                raise CBError(f'Error at line {str(lineno)} of config file: '
-                              f'{m[3]} is not a valid regular expression: {err}')
-        fields_to_find.append((m[1], m[2], m[3], regex))
+                raise CBError(f'Error at line {str(lineno + 1)} of config file: '
+                              f'{pattern} is not a valid regular expression: {err}')
+        fields_to_find.append((tag, indicators, subfield, regex))
     cfile.close()
     logging.info(f'Search target: {repr(fields_to_find)}')
 
@@ -114,8 +126,8 @@ def main(argv=None):
             date_time_message(f'Processing file {str(file)}')
             reader = MARCReader(file)
             for record in reader:
-                for (f, s, r, regex) in fields_to_find:
-                    for field in record.get_fields(f):
+                for (f, indicators, s, regex) in fields_to_find:
+                    for field in record.get_fields(f, indicators=indicators):
                         if not s:
                             subfields = field.get_subfields()
                         else:
