@@ -43,6 +43,7 @@ and the .exe files have been copied to an executable path.
 | cn-tidy | [cn_find](#cn_find) | CN-FIND \<infile> | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file> --tidy |
 | del-fld | [keep_fld](#keep_fld) | DEL-FLD \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> --delete |
 | del-fld2 | [keep_fld](#keep_fld) | DEL-FLD2 \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> --delete |
+| fix-fmt | [fix_fmt](#fix_fmt) | FIX-FMT \<marcfile> | fix_fmt -i <input_file> \[\<input_file> ...\] |
 | keep-fld | [keep_fld](#keep_fld) | KEEP-FLD \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> |
 | keep-fld2 | [keep_fld](#keep_fld) | KEEP-FLD2 \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> |
 | marccount | [marc_count](#marc_count) | MARCCOUNT \<infile> \[\<infile>\] | marc_count -i <input_file> \[\<input_file> ...\] |
@@ -185,6 +186,37 @@ If option --tidy is used, the list of control numbers in the output file will be
 Any duplicate control numbers will be written to an additional output file named with the prefix "dp-".
 
 Note: option --tidy cannot be used at the same time as option --rid
+
+### fix_fmt
+
+All records exported from Aleph contain a FMT field. 
+This is exported from Aleph as a control field, with no indicator values or subfield codes. 
+However, to be compliant with ISO 2709, control field tags must commence with 00.
+
+*fix_fmt* is a utility which makes records exported from Aleph ISO 2709-compliant by turning the FMT control field
+into a data field with two blank indicators and subfield 'a'. 
+Any FMT *data* fields present in the input record will be copied to the output file without modification. 
+
+    Usage: marc_count -i <input_file> [<input_file> ...] [options]
+    
+    Options:
+        --debug	Debug mode
+        --help	Show help message and exit
+
+#### Files
+
+<input_file> is the name of the input file, which must be a file of MARC 21 records *as exported from Aleph*.
+
+Multiple input files may be listed. E.g.
+
+    fix_fmt -i file1.lex file2.lex file3.lex
+
+Wildcard characters may be used. E.g. 
+
+    fix_fmt -i file*.lex
+
+The utility writes output for each input file to a file with the same name, but	prefixed with "fix-".
+
 
 ### keep_fld
 

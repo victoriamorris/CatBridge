@@ -21,6 +21,8 @@ requirements = [
 setup(
     console=[
         'bin/cn_find.py',
+        'bin/fix_fmt.py',
+        'bin/keep_fld.py',
         'bin/marc_count.py',
     ],
     zipfile=None,
@@ -39,6 +41,8 @@ setup(
     packages=['catbridge_tools'],
     scripts=[
         'bin/cn_find.py',
+        'bin/fix_fmt.py',
+        'bin/keep_fld.py',
         'bin/marc_count.py',
     ],
     classifiers=[
