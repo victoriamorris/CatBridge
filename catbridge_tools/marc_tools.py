@@ -241,7 +241,8 @@ class Record(object):
                 field = Field(tag=entry_tag, data=entry_data.decode('utf-8'))
             elif str(entry_tag) in ALEPH_CONTROL_FIELDS:
                 field = Field(tag=entry_tag, data=entry_data.decode('utf-8'))
-
+            elif SUBFIELD_INDICATOR.encode('ascii') not in entry_data:
+                field = Field(tag=entry_tag, data=entry_data.decode('utf-8'))
             else:
                 subfields = list()
                 subs = entry_data.split(SUBFIELD_INDICATOR.encode('ascii'))
@@ -322,6 +323,8 @@ class Field(object):
             self.data = str(data)
         elif self.tag in ALEPH_CONTROL_FIELDS:
             self.data = str(data)
+        elif data != '' and not subfields:
+            self.data = str(data)
         else:
             self.indicator1, self.indicator2 = self.indicators = indicators
             self.subfields = subfields
@@ -381,6 +384,8 @@ class Field(object):
         if self.tag < '010' and self.tag.isdigit():
             return True
         if self.tag in ALEPH_CONTROL_FIELDS:
+            return True
+        if hasattr(self, 'data'):
             return True
         return False
 

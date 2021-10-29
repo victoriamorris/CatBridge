@@ -71,6 +71,10 @@ Command line arguments may be provided in any order.
 For the purposes of these scripts, a field tag is interpreted as a control field tag if and only if it 
 (a) takes a numerical value starting with two zeros, or (b) is either of the Aleph control fields "DB " or "SYS".
 
+#### Malformed records/fields
+- Missing indicators are recorded as blank spaces (data fields only)
+- Extra indicators are ignored (data fields only)
+
 ### cn_find
 
 *cn_find* is a utility which extracts extract control numbers from specified fields and subfields 
