@@ -99,6 +99,15 @@ For the purposes of these scripts, a field tag is interpreted as a control field
 
 ### cn_find
 
+#### Section contents
+- [Overview](#cn_find_overview)
+- [Files](#cn_find_files)
+- [Options](#cn_find_options)
+
+[[back to top of section]](#cn_find)
+
+#### Overview <a id="cn_find_overview"/>
+
 *cn_find* is a utility which extracts extract control numbers from specified fields and subfields 
 within a file of MARC records.
 
@@ -114,7 +123,9 @@ The fields and subfields to be extracted are specified in a config file.
         --debug	Debug mode
         --help	Show help message and exit
 
-#### Files
+[[back to top of section]](#cn_find)
+
+#### Files <a id="cn_find_files"/>
 
 <input_file> is the name of the input file, which must be a file of MARC 21 records.
 
@@ -193,7 +204,9 @@ Example:
 
 In the example above, field 500 subfield $a is being searched for 7-character words.
 
-#### Options
+[[back to top of section]](#cn_find)
+
+#### Options <a id="cn_find_options"/>
 
 ##### --conv
 
@@ -213,6 +226,7 @@ Any duplicate control numbers will be written to an additional output file named
 
 Note: option --tidy cannot be used at the same time as option --rid
 
+[[back to top of section]](#cn_find)
 [[back to top]](#catbridge_tools)
 
 ### fix_fmt
@@ -383,3 +397,5 @@ Wildcard characters may be used. E.g.
 
 This will count all the files with .lex suffix in the current directory, and output numbers of records per file 
 as well as a total for all files.
+
+[[back to top]](#catbridge_tools)
