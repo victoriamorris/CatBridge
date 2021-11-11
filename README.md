@@ -60,6 +60,16 @@ and the .exe files have been copied to an executable path.
 
 ### Features common to all scripts
 
+#### Section contents
+- [File formats](#file_formats)
+- [Help](#help)
+- [Logs and debugging](#logs_and_debugging)
+- [Command line arguments](#command_line_arguments)
+- [Control fields](#control_fields)
+- [Malformed records/fields](#malformed_records_fields)
+
+[[back to top of section]](#cn_find)
+
 #### File formats
 Unless otherwise specified, MARC files are in MARC 21 format, with .lex file extensions.
 Unless otherwise specified, text files are UTF-8-encoded, with .txt, .csv or .tsv file extensions.
@@ -140,6 +150,8 @@ Wildcard characters may be used. E.g.
 <output_file> is the name of the file to which the control numbers will be written. This should be a text file.
 
 <config_file> is the name of the file containing the configuration directives.
+
+[[back to top of section]](#cn_find)
 
 #### The config file
 
@@ -231,6 +243,14 @@ Note: option --tidy cannot be used at the same time as option --rid
 
 ### fix_fmt
 
+#### Section contents
+- [Overview](#fix_fmt_overview)
+- [Files](#fix_fmt_files)
+
+[[back to top of section]](#fix_fmt)
+
+#### Overview <a id="fix_fmt_overview"/>
+
 All records exported from Aleph contain a FMT field. 
 This is exported from Aleph as a control field, with no indicator values or subfield codes. 
 However, to be compliant with ISO 2709, control field tags must commence with 00.
@@ -245,7 +265,9 @@ Any FMT *data* fields present in the input record will be copied to the output f
         --debug	Debug mode
         --help	Show help message and exit
 
-#### Files
+[[back to top of section]](#fix_fmt)
+
+#### Files <a id="fix_fmt_files"/>
 
 <input_file> is the name of the input file, which must be a file of MARC 21 records *as exported from Aleph*.
 
@@ -259,9 +281,19 @@ Wildcard characters may be used. E.g.
 
 The utility writes output for each input file to a file with the same name, but	prefixed with "fix-".
 
+[[back to top of section]](#fix_fmt)
 [[back to top]](#catbridge_tools)
 
 ### keep_fld
+
+#### Section contents
+- [Overview](#keep_fld_overview)
+- [Files](#keep_fld_files)
+- [Options](#keep_fld_options)
+
+[[back to top of section]](#keep_fld)
+
+#### Overview <a id="keep_fld_overview"/>
 
 *keep_fld* is a utility to keep or delete specified fields within one or more file(s) of MARC records.
 
@@ -272,7 +304,9 @@ The utility writes output for each input file to a file with the same name, but	
         --debug	Debug mode
         --help	Show help message and exit
 
-#### Files
+[[back to top of section]](#keep_fld)
+
+#### Files <a id="keep_fld_files"/>
 
 <input_file> is the name of the input file, which must be a file of MARC 21 records.
 
@@ -289,6 +323,8 @@ but	prefixed with "k-".
 
 If option --delete *is* used, the utility writes output for each input file to a file with the same name, 
 but	prefixed with "d-".
+
+[[back to top of section]](#keep_fld)
 
 #### The config file
 
@@ -331,6 +367,8 @@ as a regular expression metacharacter it will either be followed by another doll
 
 *Note:* Field 001 will *always* be included in the output file.
 
+[[back to top of section]](#keep_fld)
+
 ##### Examples
 
 To keep/delete field 041:
@@ -363,7 +401,9 @@ To keep/delete any subfields of field 041 which contain an uppercase letter:
     
     =041  **$*.*[A-Z].*
 
-#### Options
+[[back to top of section]](#keep_fld)
+
+#### Options <a id="keep_fld_options"/>
 
 ##### --delete
 
@@ -371,9 +411,18 @@ By default, only the fields or subfields specified in the config file will be re
 
 If option --delete is used, the specified fields and subfields will instead be deleted from the input file.
 
+[[back to top of section]](#keep_fld)
 [[back to top]](#catbridge_tools)
 
 ### marc_count
+
+#### Section contents
+- [Overview](#marc_count_overview)
+- [Files](#marc_count_files)
+
+[[back to top of section]](#marc_count)
+
+#### Overview <a id="marc_count_overview"/>
 
 *marc_count* is a utility which counts the number of records present within one or more file(s) of MARC records.
 
@@ -383,7 +432,7 @@ If option --delete is used, the specified fields and subfields will instead be d
         --debug	Debug mode
         --help	Show help message and exit
 
-#### Files
+#### Files <a id="marc_count_files"/>
 
 <input_file> is the name of the input file, which must be a file of MARC 21 records.
 
@@ -398,4 +447,5 @@ Wildcard characters may be used. E.g.
 This will count all the files with .lex suffix in the current directory, and output numbers of records per file 
 as well as a total for all files.
 
+[[back to top of section]](#marc_count)
 [[back to top]](#catbridge_tools)
