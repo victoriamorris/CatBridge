@@ -3,11 +3,15 @@ Tools for working with MARC data in Catalogue Bridge.
 
 Borrows heavily from PyMarc (https://pypi.org/project/pymarc/).
 
+[[back to top]](#catbridge_tools)
+
 ## Requirements
 
 Requires the regex module from https://bitbucket.org/mrabarnett/mrab-regex. The built-in re module is not sufficient.
 
 Also requires py2exe.
+
+[[back to top]](#catbridge_tools)
 
 ## Installation
 
@@ -29,11 +33,15 @@ Executable files will be created in the folder \dist, and should be copied to an
 Both of the above commands can be carried out by running the shell script:
 
     compile_catbridge_tools.sh
+    
+[[back to top]](#catbridge_tools)  
 
 ## Scripts
 
 The scripts listed below can be run from anywhere, once the package is installed 
 and the .exe files have been copied to an executable path.
+
+[[back to top]](#catbridge_tools)
 
 ### Correspondence with original Catalogue Bridge tools
 
@@ -48,6 +56,8 @@ and the .exe files have been copied to an executable path.
 | keep-fld2 | [keep_fld](#keep_fld) | KEEP-FLD2 \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> |
 | marccount | [marc_count](#marc_count) | MARCCOUNT \<infile> \[\<infile>\] | marc_count -i <input_file> \[\<input_file> ...\] |
 
+[[back to top]](#catbridge_tools)
+
 ### Features common to all scripts
 
 #### File formats
@@ -55,8 +65,12 @@ Unless otherwise specified, MARC files are in MARC 21 format, with .lex file ext
 Unless otherwise specified, text files are UTF-8-encoded, with .txt, .csv or .tsv file extensions.
 Config files are also text files, but may have the file extension .cfg for convenience.
 
+[[back to top]](#catbridge_tools)
+
 #### Help
 For any script, use the option --help, or run the script without arguments/options, to display help text.
+
+[[back to top]](#catbridge_tools)
 
 #### Logs and debugging
 Logs will be written to catbridge.log within the working directory. 
@@ -64,16 +78,24 @@ This is a UTF-8 encoded text field and can be read in any text editor.
 The default logging level is INFO; if option --debug is set, the logging level is changed to DEBUG.
 See https://docs.python.org/3/library/logging.html#levels for information about logging levels.
 
+[[back to top]](#catbridge_tools)
+
 #### Command line arguments
 Command line arguments may be provided in any order.
+
+[[back to top]](#catbridge_tools)
 
 #### Control fields
 For the purposes of these scripts, a field tag is interpreted as a control field tag if and only if it 
 (a) takes a numerical value starting with two zeros, or (b) is either of the Aleph control fields "DB " or "SYS".
 
+[[back to top]](#catbridge_tools)
+
 #### Malformed records/fields
 - Missing indicators are recorded as blank spaces (data fields only)
 - Extra indicators are ignored (data fields only)
+
+[[back to top]](#catbridge_tools)
 
 ### cn_find
 
@@ -191,6 +213,8 @@ Any duplicate control numbers will be written to an additional output file named
 
 Note: option --tidy cannot be used at the same time as option --rid
 
+[[back to top]](#catbridge_tools)
+
 ### fix_fmt
 
 All records exported from Aleph contain a FMT field. 
@@ -221,6 +245,7 @@ Wildcard characters may be used. E.g.
 
 The utility writes output for each input file to a file with the same name, but	prefixed with "fix-".
 
+[[back to top]](#catbridge_tools)
 
 ### keep_fld
 
@@ -331,6 +356,8 @@ To keep/delete any subfields of field 041 which contain an uppercase letter:
 By default, only the fields or subfields specified in the config file will be retained in the output.
 
 If option --delete is used, the specified fields and subfields will instead be deleted from the input file.
+
+[[back to top]](#catbridge_tools)
 
 ### marc_count
 
