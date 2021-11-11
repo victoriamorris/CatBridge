@@ -17,10 +17,10 @@ Also requires py2exe.
 
 From GitHub:
     
-    ```shell
-    git clone https://github.com/victoriamorris/catbridge_tools
-    cd catbridge_tools
-    ```    
+```shell
+git clone https://github.com/victoriamorris/catbridge_tools
+cd catbridge_tools
+```    
 
 To install as a Python package:
 
