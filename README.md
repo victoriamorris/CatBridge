@@ -24,17 +24,23 @@ cd catbridge_tools
 
 To install as a Python package:
 
-    python setup.py install
+```python
+python setup.py install
+```
     
 To create stand-alone executable (.exe) files for individual scripts:
 
-    python setup.py py2exe 
-    
+```python
+python setup.py py2exe 
+```
+
 Executable files will be created in the folder \dist, and should be copied to an executable path.
 
 Both of the above commands can be carried out by running the shell script:
 
-    compile_catbridge_tools.sh
+```shell
+compile_catbridge_tools.sh
+```
     
 [[back to top]](#catbridge_tools)  
 
@@ -121,15 +127,17 @@ within a file of MARC records.
 
 The fields and subfields to be extracted are specified in a config file.
 
-    Usage: cn_find -i <input_file> [<input_file> ...] -o <output_file> -c <config_file> [options]
-    
-    Options:
-        --conv  Convert 10-digit ISBNs to 13-digit form where possible
-        --rid   Include record ID as the first column of the output file
-        --tidy  Sort and de-duplicate list
+```shell
+Usage: cn_find -i <input_file> [<input_file> ...] -o <output_file> -c <config_file> [options]
 
-        --debug	Debug mode
-        --help	Show help message and exit
+Options:
+    --conv  Convert 10-digit ISBNs to 13-digit form where possible
+    --rid   Include record ID as the first column of the output file
+    --tidy  Sort and de-duplicate list
+
+    --debug	Debug mode
+    --help	Show help message and exit
+```        
 
 [[back to top of section]](#cn_find)
 
