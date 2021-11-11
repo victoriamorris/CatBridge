@@ -41,8 +41,6 @@ Both of the above commands can be carried out by running the shell script:
 The scripts listed below can be run from anywhere, once the package is installed 
 and the .exe files have been copied to an executable path.
 
-[[back to top]](#catbridge_tools)
-
 ### Correspondence with original Catalogue Bridge tools
 
 | Original Catalogue Bridge tool | New tool | Original syntax | Corresponding new syntax |
@@ -61,28 +59,26 @@ and the .exe files have been copied to an executable path.
 ### Features common to all scripts
 
 #### Section contents
-- [File formats](#file_formats)
+- [File formats](#formats)
 - [Help](#help)
-- [Logs and debugging](#logs_and_debugging)
-- [Command line arguments](#command_line_arguments)
+- [Logs and debugging](#logs)
+- [Command line arguments](#cla)
 - [Control fields](#control_fields)
-- [Malformed records/fields](#malformed_records_fields)
+- [Malformed records/fields](#malformed_records)
 
-[[back to top of section]](#cn_find)
-
-#### File formats
+#### File formats <a id="formats"/>
 Unless otherwise specified, MARC files are in MARC 21 format, with .lex file extensions.
 Unless otherwise specified, text files are UTF-8-encoded, with .txt, .csv or .tsv file extensions.
 Config files are also text files, but may have the file extension .cfg for convenience.
 
 [[back to top]](#catbridge_tools)
 
-#### Help
+#### Help <a id="help"/>
 For any script, use the option --help, or run the script without arguments/options, to display help text.
 
 [[back to top]](#catbridge_tools)
 
-#### Logs and debugging
+#### Logs and debugging <a id="logs"/>
 Logs will be written to catbridge.log within the working directory. 
 This is a UTF-8 encoded text field and can be read in any text editor.
 The default logging level is INFO; if option --debug is set, the logging level is changed to DEBUG.
@@ -90,18 +86,18 @@ See https://docs.python.org/3/library/logging.html#levels for information about 
 
 [[back to top]](#catbridge_tools)
 
-#### Command line arguments
+#### Command line arguments <a id="cla"/>
 Command line arguments may be provided in any order.
 
 [[back to top]](#catbridge_tools)
 
-#### Control fields
+#### Control fields <a id="control_fields"/>
 For the purposes of these scripts, a field tag is interpreted as a control field tag if and only if it 
 (a) takes a numerical value starting with two zeros, or (b) is either of the Aleph control fields "DB " or "SYS".
 
 [[back to top]](#catbridge_tools)
 
-#### Malformed records/fields
+#### Malformed records/fields <a id="malformed_records"/>
 - Missing indicators are recorded as blank spaces (data fields only)
 - Extra indicators are ignored (data fields only)
 
