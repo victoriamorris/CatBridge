@@ -4,7 +4,6 @@
 # Import required modules
 import re
 from distutils.core import setup
-import py2exe
 
 __author__ = 'Victoria Morris'
 __license__ = 'MIT License'
@@ -14,7 +13,7 @@ __status__ = '4 - Beta Development'
 # List requirements.
 # All other requirements should all be contained in the standard library
 requirements = [
-    'py2exe',
+    'regex'
 ]
 
 # Setup
@@ -23,6 +22,7 @@ setup(
         'bin/cn_find.py',
         'bin/fix_fmt.py',
         'bin/keep_fld.py',
+        'bin/marc_check.py',
         'bin/marc_count.py',
     ],
     zipfile=None,
@@ -43,6 +43,7 @@ setup(
         'bin/cn_find.py',
         'bin/fix_fmt.py',
         'bin/keep_fld.py',
+        'bin/marc_check.py',
         'bin/marc_count.py',
     ],
     classifiers=[

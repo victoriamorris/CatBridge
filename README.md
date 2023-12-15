@@ -1,4 +1,4 @@
-# catbridge_tools
+# catbridge_tools <a id="catbridge_tools"/>
 Tools for working with MARC data in Catalogue Bridge. 
 
 Borrows heavily from PyMarc (https://pypi.org/project/pymarc/).
@@ -7,9 +7,7 @@ Borrows heavily from PyMarc (https://pypi.org/project/pymarc/).
 
 ## Requirements
 
-Requires the regex module from https://bitbucket.org/mrabarnett/mrab-regex. The built-in re module is not sufficient.
-
-Also requires py2exe.
+Requires the regex module from https://bitbucket.org/mrabarnett/mrab-regex. The built-in re module is not sufficient.=
 
 [[back to top]](#catbridge_tools)
 
@@ -18,20 +16,13 @@ Also requires py2exe.
 From GitHub:
     
 ```shell
-git clone https://github.com/victoriamorris/catbridge_tools
-cd catbridge_tools
-```    
-
-To install as a Python package:
-
-```python
-python setup.py install
+python -m pip install git+https://github.com/victoriamorris/CatBridge.git@main
 ```
-    
-To create stand-alone executable (.exe) files for individual scripts:
+
+To create stand-alone executable (.exe) files for individual scripts from downloaded source code:
 
 ```python
-python setup.py py2exe 
+python -m PyInstaller bin/<script_name>.py -F
 ```
 
 Executable files will be created in the folder \dist, and should be copied to an executable path.
@@ -51,16 +42,18 @@ and the .exe files have been copied to an executable path.
 
 ### Correspondence with original Catalogue Bridge tools
 
-| Original Catalogue Bridge tool | New tool | Original syntax | Corresponding new syntax |
-| -------- | -------- | -------- | -------- |
-| cn-find | [cn_find](#cn_find) | CN-FIND \<infile> \<outfile> \<configfile> | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file> |
-| cn-tidy | [cn_find](#cn_find) | CN-FIND \<infile> | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file> --tidy |
-| del-fld | [keep_fld](#keep_fld) | DEL-FLD \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> --delete |
-| del-fld2 | [keep_fld](#keep_fld) | DEL-FLD2 \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> --delete |
-| fix-fmt | [fix_fmt](#fix_fmt) | FIX-FMT \<marcfile> | fix_fmt -i <input_file> \[\<input_file> ...\] |
-| keep-fld | [keep_fld](#keep_fld) | KEEP-FLD \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> |
-| keep-fld2 | [keep_fld](#keep_fld) | KEEP-FLD2 \<infile> \<configfile> | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> |
-| marccount | [marc_count](#marc_count) | MARCCOUNT \<infile> \[\<infile>\] | marc_count -i <input_file> \[\<input_file> ...\] |
+| Original Catalogue Bridge tool | New tool                   | Original syntax                            | Corresponding new syntax                                                               |
+|--------------------------------|----------------------------|--------------------------------------------|----------------------------------------------------------------------------------------|
+| cn-find                        | [cn_find](#cn_find)        | CN-FIND \<infile> \<outfile> \<configfile> | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file>        |
+| cn-tidy                        | [cn_find](#cn_find)        | CN-FIND \<infile>                          | cn_find -i <input_file> \[\<input_file> ...\] -o <output_file> -c <config_file> --tidy |
+| del-fld                        | [keep_fld](#keep_fld)      | DEL-FLD \<infile> \<configfile>            | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> --delete               |
+| del-fld2                       | [keep_fld](#keep_fld)      | DEL-FLD2 \<infile> \<configfile>           | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file> --delete               |
+| fix-fmt                        | [fix_fmt](#fix_fmt)        | FIX-FMT \<marcfile>                        | fix_fmt -i <input_file> \[\<input_file> ...\]                                          |
+| keep-fld                       | [keep_fld](#keep_fld)      | KEEP-FLD \<infile> \<configfile>           | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file>                        |
+| keep-fld2                      | [keep_fld](#keep_fld)      | KEEP-FLD2 \<infile> \<configfile>          | keep_fld -i <input_file> \[\<input_file> ...\] -c <config_file>                        |
+| marc-chk                       | [marc_check](#marc_check)  | MARC-CHK \<infile>                         | marc_check -i <input_file> \[\<input_file> ...\]                                       |
+| marccount                      | [marc_count](#marc_count)  | MARCCOUNT \<infile> \[\<infile>\]          | marc_count -i <input_file> \[\<input_file> ...\]                                       |
+
 
 [[back to top]](#catbridge_tools)
 
@@ -122,7 +115,7 @@ For the purposes of these scripts, a field tag is interpreted as a control field
 
 #### Overview <a id="cn_find_overview"/>
 
-*cn_find* is a utility which extracts extract control numbers from specified fields and subfields 
+*cn_find* is a utility which extracts control numbers from specified fields and subfields 
 within a file of MARC records.
 
 The fields and subfields to be extracted are specified in a config file.
@@ -418,6 +411,111 @@ By default, only the fields or subfields specified in the config file will be re
 If option --delete is used, the specified fields and subfields will instead be deleted from the input file.
 
 [[back to top of section]](#keep_fld)
+[[back to top]](#catbridge_tools)
+
+### marc_check
+
+#### Section contents
+- [Overview](#marc_check_overview)
+- [Files](#marc_check_files)
+- [Test data](#marc_check_test)
+
+[[back to top of section]](#marc_check)
+
+#### Overview <a id="marc_check_overview"/>
+
+*marc_check* is a utility which checks the structural validity of records present within one or more file(s) of MARC records,
+and isolates those found to be flawed.
+
+    Usage: marc_check -i <input_file> [<input_file> ...] [options]
+    
+    Options:
+        --debug	Debug mode
+        --help	Show help message and exit
+
+[[back to top of section]](#marc_check)
+
+###### Checks
+
+The utility performs the following checks on each MARC record:
+1. The record contains data.
+2. The record <a href="https://www.loc.gov/marc/bibliographic/bdleader.html">Leader</a> has the correct length, 
+namely 24 ascii characters.
+3. The record length specified in the <a href="https://www.loc.gov/marc/bibliographic/bdleader.html">Leader</a>, 
+positions 00-04, matches the observed length of the record.   
+    * This number should consist of five digits, and be equal to the length of the entire record, 
+including itself and the record terminator.  
+    * The number is right justified and unused positions contain zeros.
+    * The record must end with an end-of-record character (hex 1D).
+    * The record must not contain an end-of-record character (hex 1D) in any other position.
+4. The base address specified in the <a href="https://www.loc.gov/marc/bibliographic/bdleader.html">Leader</a>, 
+positions 12-16, does not exceed the size of the record.
+    * This number should consist of five digits, and be equal to the first character position of the first variable field in the record. 
+    * The number is right justified and unused positions contain zeros.
+5. The length of the <a href="https://www.loc.gov/marc/bibliographic/bddirectory.html">Directory</a> is a multiple of 12.
+6. The <a href="https://www.loc.gov/marc/bibliographic/bddirectory.html">Directory</a> must be followed by an end-of-field character (hex 1E).
+    * The end-of-field character is *not* counted when calculating the length of the directory
+7. Each entry in the <a href="https://www.loc.gov/marc/bibliographic/bddirectory.html">Directory</a> corresponds to a single field.
+    * This field must end with an end-of-field character (hex 1E).
+    * This field must not contain an end-of-field character (hex 1E) in any other position.
+
+[[back to top of section]](#marc_check)
+
+#### Files <a id="marc_check_files"/>
+
+<input_file> is the name of the input file, which must be a file of MARC 21 records.
+
+Multiple input files may be listed. E.g.
+
+    marc_check -i file1.lex file2.lex file3.lex
+
+Wildcard characters may be used. E.g. 
+
+    marc_check -i file*.lex
+
+This will check all the files with .lex suffix in the current directory.
+
+For each input file, the utility writes flawed records to a file with a name of the <input_file>_f.lex.
+Note that the structural problems with these records mean that it will not normally be possible to view this file in MarcView, MarcEdit, etc.
+
+All records which are found to be structurally valid are written to a file with a name of the <input_file>_ok.lex.
+
+A summary of errors found will be written to the [standard log file](#logs).
+
+#### Test data <a id="marc_check_test"/>
+
+Test data for marc_check is provided in the folder test_data/marc_check. This folder contains two .lex files:
+1. test_clean.lex
+2. test_with_errors.lex
+
+test_clean.lex contains 556 records, none of which have structural flaws.
+Output when marc_check is run on this file should look as follows:
+
+```shell
+Checking file test_clean.lex
+File test_clean.lex contains 0 flawed records
+100% [556 records] processed
+```
+
+test_with_errors.lex contains the same 556 records, but with deliberate structural flaws.
+Output when marc_check is run on this file should look as follows:
+
+```bat
+Checking file test_with_errors.lex
+Error at record 2: Record length does not match length specified in first 5 bytes of record: specified length 1880; observed 1877
+Error at record 3: Record length does not match length specified in first 5 bytes of record: specified length 1740; observed 1744
+Error at record 4: Directory is invalid: length 966 is not a multiple of 12
+Error at record 9: Base address exceeds size of record: base address 99589; observed record length 2137
+Error at record 15: Directory does not end with end-of-field character (b'\x1e')
+Error at record 22: Field 47 with tag CAT does not end with end-of-field character (b'\x1e')
+Error at record 23: Field 1 with tag 001 does not end with end-of-field character (b'\x1e')
+Error at record 29: Field 9 with tag 245 does not end with end-of-field character (b'\x1e')
+Error at record 30: Field 16 with tag 504 contains unexpected end-of-field character (b'\x1e')
+File test_with_errors.lex contains 9 flawed records
+100% [556 records] processed
+```
+
+[[back to top of section]](#marc_check)
 [[back to top]](#catbridge_tools)
 
 ### marc_count
