@@ -26,8 +26,9 @@ __status__ = '4 - Beta Development'
 # ====================
 
 
-LEADER_LENGTH, DIRECTORY_ENTRY_LENGTH = 24, 12
+LEADER_LENGTH, DIRECTORY_LENGTH = 24, 12
 SUBFIELD_INDICATOR, END_OF_FIELD, END_OF_RECORD = chr(0x1F), chr(0x1E), chr(0x1D)
+SUBFIELD_INDICATOR_BYTES, END_OF_FIELD_BYTES, END_OF_RECORD_BYTES = b'\x1F', b'\x1E', b'\x1D'
 ALEPH_CONTROL_FIELDS = ['DB ', 'SYS']
 
 
@@ -132,6 +133,38 @@ class MARCReader(object):
         return Record(first5 + self.file_handle.read(int(first5) - 5))
 
 
+class MARCReaderTentative(MARCReader):
+
+    def __int__(self, path_to_file):
+        super().__init__(path_to_file)
+
+    def __next__(self):
+        self.count += 1
+        first5 = self.file_handle.read(5)
+        if not first5:
+            raise StopIteration
+        if len(first5) < 5:
+            return False, (f'Error at record {str(self.count)}: '
+                           f'Invalid record length in first 5 bytes of record'), b''
+        self.processed += int(first5)
+        data = self.file_handle.read(int(first5) - 5)
+        if not data.endswith(END_OF_RECORD_BYTES):
+            if END_OF_RECORD_BYTES in data:
+                data, new_record = data.split(END_OF_RECORD_BYTES, 1)
+                data += END_OF_RECORD_BYTES
+                self.file_handle.seek(-1 * len(new_record), 1)
+            while END_OF_RECORD_BYTES not in data:
+                data += self.file_handle.read(1)
+            return False, (f'Error at record {str(self.count)}: '
+                           f'Record length does not match length specified in first 5 bytes of record: '
+                           f'specified length {str(int(first5))}; observed {str(len(data) + 5)}'), first5 + data
+        tentative = RecordTentative(first5 + data)
+        valid, message = tentative.decode_marc()
+        if not valid:
+            return False, f'Error at record {str(self.count)}: {message}', first5 + data
+        return valid, None, Record(first5 + data)
+
+
 class MARCWriter(object):
 
     def __init__(self, path_to_file):
@@ -221,15 +254,15 @@ class Record(object):
         directory = marc[LEADER_LENGTH:base_address - 1].decode('ascii')
 
         # Determine the number of fields in record
-        if len(directory) % DIRECTORY_ENTRY_LENGTH != 0:
+        if len(directory) % DIRECTORY_LENGTH != 0:
             raise DirectoryError
-        field_total = len(directory) / DIRECTORY_ENTRY_LENGTH
+        field_total = len(directory) / DIRECTORY_LENGTH
 
         # Add fields to record using directory offsets
         field_count = 0
         while field_count < field_total:
-            entry_start = field_count * DIRECTORY_ENTRY_LENGTH
-            entry_end = entry_start + DIRECTORY_ENTRY_LENGTH
+            entry_start = field_count * DIRECTORY_LENGTH
+            entry_end = entry_start + DIRECTORY_LENGTH
             entry = directory[entry_start:entry_end]
             entry_tag = entry[0:3]
             entry_length = int(entry[3:7])
@@ -304,6 +337,74 @@ class Record(object):
             logging.warning(f'Record lacking record id with title {str(self["245"]) or "[No title either!]"}')
             self.id = '[No record ID]'
         return self.id
+
+
+class RecordTentative(object):
+
+    def __init__(self, data: bytes = None, leader=' ' * LEADER_LENGTH):
+        self.leader = '{}22{}4500'.format(leader[0:10], leader[12:20])
+        self.fields = list()
+        self.pos = 0
+        self.data = data
+
+    def decode_marc(self) -> (bool, str):
+        if not self.data or len(self.data) <= 0:
+            return False, 'Record appears to contain no data'
+        # Extract record leader
+        try:
+            self.leader = self.data[0:LEADER_LENGTH].decode('ascii')
+        except Exception as err:
+            return False, f'Encountered record with Leader that could not be processed: {err}'
+        if len(self.leader) != LEADER_LENGTH:
+            return False, (f'Leader appears to have incorrect length: '
+                           f'expected length {str(LEADER_LENGTH)} observed leader length {str(len(self.leader))}')
+
+        # Extract the byte offset where the record data starts
+        base_address = int(self.data[12:17])
+        if base_address <= 0:
+            return False, BaseAddressError
+        if base_address >= len(self.data):
+            return False, (f'Base address exceeds size of record: '
+                           f'base address {str(base_address)}; observed record length {str(len(self.data))}')
+
+        # Extract directory
+        # base_address-1 is used since the directory ends with an END_OF_FIELD byte
+        try:
+            directory = self.data[LEADER_LENGTH:base_address - 1].decode('ascii')
+        except Exception as err:
+            return False, f'Encountered record with Directory that could not be processed: {err}'
+
+        # Determine the number of fields in record
+        if len(directory) % DIRECTORY_LENGTH != 0:
+            return False, (f'Directory is invalid: '
+                           f'length {str(len(directory))} is not a multiple of {str(DIRECTORY_LENGTH)}')
+        field_total = len(directory) / DIRECTORY_LENGTH
+
+        directory = self.data[LEADER_LENGTH:base_address]
+        if not directory.endswith(END_OF_FIELD_BYTES):
+            return False, f'Directory does not end with end-of-field character ({str(END_OF_FIELD_BYTES)})'
+
+        # Add fields to record using directory offsets
+        field_count = 0
+        while field_count < field_total:
+            entry_start = field_count * DIRECTORY_LENGTH
+            entry_end = entry_start + DIRECTORY_LENGTH
+            entry = directory[entry_start:entry_end]
+            entry_tag = entry[0:3]
+            entry_length = int(entry[3:7])
+            entry_offset = int(entry[7:12])
+            entry_data = self.data[base_address + entry_offset:base_address + entry_offset + entry_length]
+            if not entry_data.endswith(END_OF_FIELD_BYTES):
+                return False, (f'Field {str(field_count + 1)} with tag {str(entry_tag.decode("ascii"))} '
+                               f'does not end with end-of-field character ({str(END_OF_FIELD_BYTES)})')
+            if END_OF_FIELD_BYTES in self.data[base_address + entry_offset:base_address + entry_offset + entry_length -1]:
+                return False, (f'Field {str(field_count + 1)} with tag {str(entry_tag.decode("ascii"))} '
+                               f'contains unexpected end-of-field character ({str(END_OF_FIELD_BYTES)})')
+            field_count += 1
+
+        if field_count == 0:
+            return False, 'Record does not contain any fields'
+        return True, ''
 
 
 class Field(object):
