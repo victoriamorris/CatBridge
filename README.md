@@ -500,7 +500,7 @@ File test_clean.lex contains 0 flawed records
 test_with_errors.lex contains the same 556 records, but with deliberate structural flaws.
 Output when marc_check is run on this file should look as follows:
 
-```bat
+```shell
 Checking file test_with_errors.lex
 Error at record 2: Record length does not match length specified in first 5 bytes of record: specified length 1880; observed 1877
 Error at record 3: Record length does not match length specified in first 5 bytes of record: specified length 1740; observed 1744
