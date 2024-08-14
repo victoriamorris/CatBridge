@@ -1,6 +1,8 @@
 # catbridge_tools <a id="catbridge_tools"/>
 Tools for working with MARC data in Catalogue Bridge. 
 
+![CatBridge logo](https://github.com/victoriamorris/CatBridge/blob/main/catbridge.png)
+
 Borrows heavily from PyMarc (https://pypi.org/project/pymarc/).
 
 [[back to top]](#catbridge_tools)
